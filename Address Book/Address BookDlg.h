@@ -33,4 +33,5 @@ protected:
 public:
 	CTreeCtrl m_AddrbookTree;
 	CImageList m_ImageList;
+	afx_msg void OnTvnSelchangedTreeAddressbook(NMHDR *pNMHDR, LRESULT *pResult);
 };

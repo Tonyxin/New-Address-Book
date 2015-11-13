@@ -63,6 +63,7 @@ BEGIN_MESSAGE_MAP(CAddressBookDlg, CDialog)
 	ON_WM_SYSCOMMAND()
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
+	ON_NOTIFY(TVN_SELCHANGED, IDC_TREE_AddressBook, &CAddressBookDlg::OnTvnSelchangedTreeAddressbook)
 END_MESSAGE_MAP()
 
 
@@ -185,3 +186,20 @@ HCURSOR CAddressBookDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
+
+
+void CAddressBookDlg::OnTvnSelchangedTreeAddressbook(NMHDR *pNMHDR, LRESULT *pResult)
+{
+	LPNMTREEVIEW pNMTreeView = reinterpret_cast<LPNMTREEVIEW>(pNMHDR);
+	// TODO:  在此添加控件通知处理程序代码
+	*pResult = 0;
+
+	CString strText;				//存放树节点的标签文本字符串
+
+	//获取当前选中的句柄
+	HTREEITEM hItem = m_AddrbookTree.GetSelectedItem();
+	//获取选中节点的标签字符串
+	strText = m_AddrbookTree.GetItemText(hItem);
+	//将字符串显示到编辑框中
+	SetDlgItemText(IDC_EDIT_SELECTED, strText);
+}
