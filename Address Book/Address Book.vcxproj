@@ -123,8 +123,18 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\Address Book.ico" />
+    <Image Include="res\人32.ico" />
+    <Image Include="res\同学32.ico" />
+    <Image Include="res\家人32.ico" />
+    <Image Include="res\朋友32.ico" />
+    <Image Include="res\通讯录32.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
+  <ProjectExtensions>
+    <VisualStudio>
+      <UserProperties RESOURCE_FILE="Address Book.rc" />
+    </VisualStudio>
+  </ProjectExtensions>
 </Project>

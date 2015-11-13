@@ -56,6 +56,7 @@ CAddressBookDlg::CAddressBookDlg(CWnd* pParent /*=NULL*/)
 void CAddressBookDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialog::DoDataExchange(pDX);
+	DDX_Control(pDX, IDC_TREE_AddressBook, m_AddrbookTree);
 }
 
 BEGIN_MESSAGE_MAP(CAddressBookDlg, CDialog)
@@ -97,7 +98,41 @@ BOOL CAddressBookDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 设置小图标
 
 	// TODO:  在此添加额外的初始化代码
+	HICON hIcon[5];						//设置图标句柄数组
+	HTREEITEM hRoot;					//根节点句柄
+	HTREEITEM hPacket;					//表示任一分组句柄
+	HTREEITEM hMember;				//表示任一成员句柄
 
+	//加载图标，将他们的句柄保存到数组
+	hIcon[0] = theApp.LoadIcon(IDI_ICON_addrbook);
+	hIcon[1] = theApp.LoadIcon(IDI_ICON_family);
+	hIcon[2] = theApp.LoadIcon(IDI_ICON_classmate);
+	hIcon[3] = theApp.LoadIcon(IDI_ICON_friend);
+	hIcon[4] = theApp.LoadIcon(IDI_ICON_people);
+
+	//创建图像序列CImageList对象
+	m_ImageList.Create(32, 32, ILC_COLOR32, 5, 5);
+	//将图标添加到序列
+	for (int i = 0; i < 5; i++)		m_ImageList.Add(hIcon[i]);
+
+	//为树形控件设置图像序列
+	m_AddrbookTree.SetImageList(&m_ImageList, TVSIL_NORMAL);
+
+	//插入根节点
+	hRoot = m_AddrbookTree.InsertItem(_T("通讯录"), 0, 0);
+	//根结点下插入子节点“家人”
+	hPacket = m_AddrbookTree.InsertItem(_T("家人"), 1, 1, hRoot, TVI_LAST);
+	//在“家人”节点下插入子节点
+	hMember = m_AddrbookTree.InsertItem(_T("老王"), 4, 4, hPacket, TVI_LAST);
+	//根结点下插入子节点“同学”
+	hPacket = m_AddrbookTree.InsertItem(_T("同学"), 2, 2, hRoot, TVI_LAST);
+	//在“同学”节点下插入子节点
+	hMember = m_AddrbookTree.InsertItem(_T("老李"), 4, 4, hPacket, TVI_LAST);
+	//根结点下插入子节点“朋友”
+	hPacket = m_AddrbookTree.InsertItem(_T("朋友"), 3, 3, hRoot, TVI_LAST);
+	//在“朋友”节点下插入子节点
+	hMember = m_AddrbookTree.InsertItem(_T("老陈"), 4, 4, hPacket, TVI_LAST);
+	
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 
