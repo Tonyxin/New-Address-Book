@@ -2,10 +2,13 @@
 // Address BookDlg.cpp : 实现文件
 //
 
+
 #include "stdafx.h"
 #include "Address Book.h"
 #include "Address BookDlg.h"
 #include "afxdialogex.h"
+
+
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -72,7 +75,6 @@ END_MESSAGE_MAP()
 BOOL CAddressBookDlg::OnInitDialog()
 {
 	CDialog::OnInitDialog();
-
 	// 将“关于...”菜单项添加到系统菜单中。
 
 	// IDM_ABOUTBOX 必须在系统命令范围内。
@@ -99,6 +101,13 @@ BOOL CAddressBookDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 设置小图标
 
 	// TODO:  在此添加额外的初始化代码
+
+	//弹出登陆对话框
+	if (m_loginDlg.DoModal() != IDOK)	//当×掉登陆对话框时执行OnOk();		
+	{														
+		OnOK();										//结束所在的对话框
+	}
+
 	HICON hIcon[5];						//设置图标句柄数组
 	HTREEITEM hRoot;					//根节点句柄
 	HTREEITEM hPacket;					//表示任一分组句柄
