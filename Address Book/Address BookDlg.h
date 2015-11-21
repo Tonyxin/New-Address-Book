@@ -24,7 +24,9 @@ public:
 // 实现
 protected:
 	HICON m_hIcon;
-
+	Cusers rs_user;
+	CDatabase m_db;
+	DataStruct datastruct;
 	// 生成的消息映射函数
 	virtual BOOL OnInitDialog();
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
@@ -32,8 +34,11 @@ protected:
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP();
 public:
+	LinkList_Users L;
 	CLoginDlg m_loginDlg;
 	CTreeCtrl m_AddrbookTree;
 	CImageList m_ImageList;
 	afx_msg void OnTvnSelchangedTreeAddressbook(NMHDR *pNMHDR, LRESULT *pResult);
+	void ConnectDataSource();
+	void InqTable_Users();
 };

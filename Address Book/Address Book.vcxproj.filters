@@ -36,6 +36,12 @@
     <ClInclude Include="LoginDlg.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="DataStruct.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="users.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Address Book.cpp">
@@ -48,6 +54,12 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="LoginDlg.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="DataStruct.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="users.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

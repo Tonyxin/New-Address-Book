@@ -102,7 +102,11 @@ BOOL CAddressBookDlg::OnInitDialog()
 
 	// TODO:  在此添加额外的初始化代码
 
+	ConnectDataSource();		//连接数据源
+	InqTable_Users();				//查询用户表信息，用于验证账号密码
+
 	//弹出登陆对话框
+	m_loginDlg.L_login = L;			//利用成员访问的方式将用户链表L存入给登陆对话框
 	if (m_loginDlg.DoModal() != IDOK)	//当×掉登陆对话框时执行OnOk();		
 	{														
 		OnOK();										//结束所在的对话框
@@ -211,4 +215,78 @@ void CAddressBookDlg::OnTvnSelchangedTreeAddressbook(NMHDR *pNMHDR, LRESULT *pRe
 	strText = m_AddrbookTree.GetItemText(hItem);
 	//将字符串显示到编辑框中
 	SetDlgItemText(IDC_EDIT_SELECTED, strText);
+}
+
+//连接数据源
+void CAddressBookDlg::ConnectDataSource()
+{
+	//连接数据源
+	TRY
+	{
+	m_db.OpenEx(_T("DSN=DataSourceOfAddr;"), CDatabase::noOdbcDialog);	//连接到一个名为DataSourceOfAddr的数据源
+	rs_user.m_pDatabase = &m_db;
+	}
+
+	//显示连接是否成功
+	if (!m_db.IsOpen())		AfxMessageBox(_T("连接数据源失败"));
+
+	//处理异常消息
+	CATCH(CDBException, ex)
+	{
+		AfxMessageBox(ex->m_strError);
+		AfxMessageBox(ex->m_strStateNativeOrigin);
+	}
+	AND_CATCH(CMemoryException, pex)
+	{
+		pex->ReportError();
+		AfxMessageBox(_T("memory exception"));
+	}
+	AND_CATCH(CException, ex)
+	{
+		TCHAR szError[100];
+		ex->GetErrorMessage(szError, 100);
+		AfxMessageBox(szError);
+	}
+	END_CATCH;
+}
+
+//查询用户表信息
+void CAddressBookDlg::InqTable_Users()
+{
+	CString sql = _T("SELECT * FROM users");		//sql存放要执行的SQL语句
+	L = datastruct.CreatList_Users();
+	LinkList_Users L_temp = L;
+	TRY
+	{
+		rs_user.Open(CRecordset::snapshot, sql);			//打开查询记录
+		rs_user.MoveFirst();											//滚到第一条记录
+		while (!rs_user.IsEOF())										//未滚过最后一条记录，则执行
+		{
+			ElemType_Users data_user;
+			data_user.user_name = rs_user.m_u_name;					//因为已经将类Cusers绑定到表users中
+			data_user.user_password = rs_user.m_u_password;		//会实时更新
+			datastruct.InsertList_Users(L, data_user);						//插入用户链表
+			rs_user.MoveNext();														//滚向下一条记录
+		}
+	}
+	/*
+	while (L->next)
+	{
+		AfxMessageBox(L->next->data.user_name);
+		L = L->next;
+	}
+	L = L_temp;
+	datastruct.Destory_Users(L);          //销毁链表
+	*/
+	CATCH(CDBException, ex)
+	{
+		AfxMessageBox(ex->m_strError);
+		AfxMessageBox(ex->m_strStateNativeOrigin);
+	}
+	AND_CATCH(CMemoryException, pex)
+	{
+		pex->ReportError();
+		AfxMessageBox(_T("memory exception"));
+	}
+	END_CATCH;
 }

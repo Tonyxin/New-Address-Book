@@ -10,6 +10,10 @@
 #endif
 
 #include "targetver.h"
+#include "afxdb.h"						//这个头文件一定要添加，要链接数据库的话
+#include "DataStruct.h"
+#include "users.h"
+
 
 #define _ATL_CSTRING_EXPLICIT_CONSTRUCTORS      // 某些 CString 构造函数将是显式的
 
@@ -32,6 +36,7 @@
 #endif // _AFX_NO_AFXCMN_SUPPORT
 
 #include <afxcontrolbars.h>     // 功能区和控件条的 MFC 支持
+#include <afxdb.h>
 
 
 
