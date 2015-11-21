@@ -13,7 +13,10 @@
 #include "afxdb.h"						//这个头文件一定要添加，要链接数据库的话
 #include "DataStruct.h"
 #include "users.h"
+#include "view_group.h"
+#include "view_member.h"
 
+#define WM_RECEV_USER		WM_USER+100			//自己定义的消息，用于返回当前用户编号
 
 #define _ATL_CSTRING_EXPLICIT_CONSTRUCTORS      // 某些 CString 构造函数将是显式的
 

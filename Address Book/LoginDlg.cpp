@@ -53,16 +53,17 @@ void CLoginDlg::OnBnClickedButtonclick()
 	while (L_logintemp->next)
 	{
 		L_logintemp = L_logintemp->next;
-		if (L_logintemp->data.user_name == user_name)
+		if (L_logintemp->data.user_name == user_name)						//输入账户为数据库中已有账户
 		{
 			name_mark = 1;
-			if (L_logintemp->data.user_password == user_password)
+			if (L_logintemp->data.user_password == user_password)     //检查响应密码是否正确
 			{
 				password_mark = 1;
+				::SendMessage(this->GetParent()->m_hWnd, WM_RECEV_USER, 0, (LPARAM)(&(L_logintemp->data.user_id)));
 				break;
-			}
-		}
-	}
+			}//if
+		}//if
+	}//while
 
 	if (name_mark&&password_mark)	OnOK();
 	else if (name_mark && (!password_mark))							//判断是否输入正确

@@ -1,14 +1,14 @@
-// users.h : Cusers 的声明
+// view_group.h : Cview_group 的声明
 
 #pragma once
 
-// 代码生成在 2015年11月20日, 21:26
+// 代码生成在 2015年11月21日, 19:18
 
-class Cusers : public CRecordset
+class Cview_group : public CRecordset
 {
 public:
-	Cusers(CDatabase* pDatabase = NULL);
-	DECLARE_DYNAMIC(Cusers)
+	Cview_group(CDatabase* pDatabase = NULL);
+	DECLARE_DYNAMIC(Cview_group)
 
 // 字段/参数数据
 
@@ -20,9 +20,9 @@ public:
 // (注意: 必须使用 3.5 版或更高版本的 ODBC 驱动程序
 // 以同时支持 Unicode 和这些转换)。
 
-	int	m_u_id;
-	CStringA	m_u_name;
-	CStringA	m_u_password;
+	int	m_u_id;					//用户编号
+	int	m_p_id;					//分组编号
+	CStringA	m_p_mode;	//分组名称
 
 // 重写
 	// 向导生成的虚函数重写

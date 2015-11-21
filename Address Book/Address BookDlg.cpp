@@ -67,6 +67,7 @@ BEGIN_MESSAGE_MAP(CAddressBookDlg, CDialog)
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
 	ON_NOTIFY(TVN_SELCHANGED, IDC_TREE_AddressBook, &CAddressBookDlg::OnTvnSelchangedTreeAddressbook)
+	ON_MESSAGE(WM_RECEV_USER, OnRecevUser)
 END_MESSAGE_MAP()
 
 
@@ -102,8 +103,11 @@ BOOL CAddressBookDlg::OnInitDialog()
 
 	// TODO:  在此添加额外的初始化代码
 
-	ConnectDataSource();		//连接数据源
-	InqTable_Users();				//查询用户表信息，用于验证账号密码
+	//连接数据源
+	ConnectDataSource();		
+	
+	//查询用户表信息，用于验证账号密码
+	InqTable_Users();				
 
 	//弹出登陆对话框
 	m_loginDlg.L_login = L;			//利用成员访问的方式将用户链表L存入给登陆对话框
@@ -111,6 +115,14 @@ BOOL CAddressBookDlg::OnInitDialog()
 	{														
 		OnOK();										//结束所在的对话框
 	}
+	//销毁用户链表
+	datastruct.Destory_Users(L);          
+
+	//查询用户的分组信息
+	InqView_Group();
+
+	//查询每个分组中的成员信息
+	InqView_Member();
 
 	HICON hIcon[5];						//设置图标句柄数组
 	HTREEITEM hRoot;					//根节点句柄
@@ -225,6 +237,8 @@ void CAddressBookDlg::ConnectDataSource()
 	{
 	m_db.OpenEx(_T("DSN=DataSourceOfAddr;"), CDatabase::noOdbcDialog);	//连接到一个名为DataSourceOfAddr的数据源
 	rs_user.m_pDatabase = &m_db;
+	rs_group.m_pDatabase = &m_db;
+	rs_member.m_pDatabase = &m_db;
 	}
 
 	//显示连接是否成功
@@ -265,19 +279,99 @@ void CAddressBookDlg::InqTable_Users()
 			ElemType_Users data_user;
 			data_user.user_name = rs_user.m_u_name;					//因为已经将类Cusers绑定到表users中
 			data_user.user_password = rs_user.m_u_password;		//会实时更新
+			data_user.user_id = rs_user.m_u_id;
 			datastruct.InsertList_Users(L, data_user);						//插入用户链表
 			rs_user.MoveNext();														//滚向下一条记录
 		}
 	}
-	/*
-	while (L->next)
+	CATCH(CDBException, ex)
 	{
-		AfxMessageBox(L->next->data.user_name);
-		L = L->next;
+		AfxMessageBox(ex->m_strError);
+		AfxMessageBox(ex->m_strStateNativeOrigin);
 	}
-	L = L_temp;
-	datastruct.Destory_Users(L);          //销毁链表
-	*/
+	AND_CATCH(CMemoryException, pex)
+	{
+		pex->ReportError();
+		AfxMessageBox(_T("memory exception"));
+	}
+	END_CATCH;
+}
+
+//对登陆对话框的消息响应函数，存储当前用户id
+LRESULT CAddressBookDlg::OnRecevUser(WPARAM wParam, LPARAM lParam)
+{
+	id_user = *((int*)lParam);			//保存当前用户id
+	return TRUE;
+}
+
+//查询分组视图信息
+void CAddressBookDlg::InqView_Group()
+{
+	CString sql = _T("SELECT * FROM view_group");		//sql存放要执行的SQL语句
+	L_Group = datastruct.CreatList_Group();
+	LinkList_Group L_temp = L_Group;
+	TRY
+	{
+		rs_group.Open(CRecordset::snapshot, sql);			//打开查询记录
+		rs_group.MoveFirst();											//滚到第一条记录
+		while (!rs_group.IsEOF())										//未滚过最后一条记录，则执行
+		{
+			if (rs_group.m_u_id == id_user)							//只为当前用户建立链表
+			{
+				ElemType_Group data_group;
+				data_group.group_id = rs_group.m_p_id;
+				data_group.group_name = rs_group.m_p_mode;
+				data_group.user_id = rs_group.m_u_id;
+				datastruct.InsertList_Group(L_Group, data_group);		//插入分组链表
+			}
+			rs_group.MoveNext();														//滚向下一条记录
+		}
+	}
+	CATCH(CDBException, ex)
+	{
+		AfxMessageBox(ex->m_strError);
+		AfxMessageBox(ex->m_strStateNativeOrigin);
+	}
+	AND_CATCH(CMemoryException, pex)
+	{
+		pex->ReportError();
+		AfxMessageBox(_T("memory exception"));
+	}
+	END_CATCH;
+}
+
+
+//查询个分组中成员（只有成员的名称，详细信息在别的函数中）
+void CAddressBookDlg::InqView_Member()
+{
+	CString sql = _T("SELECT * FROM member");		//sql存放要执行的SQL语句
+	TRY
+	{
+		rs_member.Open(CRecordset::snapshot, sql);			//打开查询记录
+		rs_member.MoveFirst();												//滚到第一条记录
+		while (!rs_member.IsEOF())										//未滚过最后一条记录，则执行
+		{
+			if (rs_member.m_u_id == id_user)							//属于当前用户
+			{
+				LinkList_Group L_temp = L_Group;
+				while (L_temp->next)
+				{
+					L_temp = L_temp->next;
+					if (L_temp->data.group_id == rs_member.m_p_id)	//属于当前分组
+					{
+						ElemType_Member data_member;
+						data_member.group_id = rs_member.m_p_id;
+						data_member.member_id = rs_member.m_m_id;
+						data_member.member_name = rs_member.m_m_name;
+						datastruct.InsertList_Member(L_temp->data.member_list, data_member);
+						break;
+					}//if
+				}//while
+			}//if
+			rs_member.MoveNext();
+		}//while
+	}//TRY
+
 	CATCH(CDBException, ex)
 	{
 		AfxMessageBox(ex->m_strError);
