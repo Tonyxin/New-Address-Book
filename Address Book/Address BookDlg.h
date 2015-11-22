@@ -51,4 +51,5 @@ public:
 	void InqTable_Users();
 	void InqView_Group();
 	void InqView_Member();
+	afx_msg void OnEnChangeEditSelected();
 };

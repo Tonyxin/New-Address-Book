@@ -68,6 +68,7 @@ BEGIN_MESSAGE_MAP(CAddressBookDlg, CDialog)
 	ON_WM_QUERYDRAGICON()
 	ON_NOTIFY(TVN_SELCHANGED, IDC_TREE_AddressBook, &CAddressBookDlg::OnTvnSelchangedTreeAddressbook)
 	ON_MESSAGE(WM_RECEV_USER, OnRecevUser)
+	ON_EN_CHANGE(IDC_EDIT_SELECTED, &CAddressBookDlg::OnEnChangeEditSelected)
 END_MESSAGE_MAP()
 
 
@@ -144,8 +145,28 @@ BOOL CAddressBookDlg::OnInitDialog()
 	//为树形控件设置图像序列
 	m_AddrbookTree.SetImageList(&m_ImageList, TVSIL_NORMAL);
 
+	//将分组成员信息显示到树形控件中
 	//插入根节点
 	hRoot = m_AddrbookTree.InsertItem(_T("通讯录"), 0, 0);
+
+	LinkList_Group L_Group_temp = L_Group;
+	//根节点下插入分组节点
+	while (L_Group_temp->next)
+	{
+		L_Group_temp = L_Group_temp->next;
+		CString group_name = L_Group_temp->data.group_name;
+		int group_id = L_Group_temp->data.group_id;
+		hPacket = m_AddrbookTree.InsertItem(group_name, group_id, group_id, hRoot, TVI_LAST);
+		//分组节点下插入根节点
+		LinkList_Member L_Member_temp = L_Group_temp->data.member_list;
+		while (L_Member_temp->next)
+		{
+			L_Member_temp = L_Member_temp->next;
+			CString member_name = L_Member_temp->data.member_name;
+			hMember = m_AddrbookTree.InsertItem(member_name, 4, 4, hPacket, TVI_LAST);
+		}
+	}
+	/*
 	//根结点下插入子节点“家人”
 	hPacket = m_AddrbookTree.InsertItem(_T("家人"), 1, 1, hRoot, TVI_LAST);
 	//在“家人”节点下插入子节点
@@ -158,7 +179,7 @@ BOOL CAddressBookDlg::OnInitDialog()
 	hPacket = m_AddrbookTree.InsertItem(_T("朋友"), 3, 3, hRoot, TVI_LAST);
 	//在“朋友”节点下插入子节点
 	hMember = m_AddrbookTree.InsertItem(_T("老陈"), 4, 4, hPacket, TVI_LAST);
-	
+	*/
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 
@@ -383,4 +404,15 @@ void CAddressBookDlg::InqView_Member()
 		AfxMessageBox(_T("memory exception"));
 	}
 	END_CATCH;
+}
+
+
+void CAddressBookDlg::OnEnChangeEditSelected()
+{
+	// TODO:  如果该控件是 RICHEDIT 控件，它将不
+	// 发送此通知，除非重写 CDialog::OnInitDialog()
+	// 函数并调用 CRichEditCtrl().SetEventMask()，
+	// 同时将 ENM_CHANGE 标志“或”运算到掩码中。
+
+	// TODO:  在此添加控件通知处理程序代码
 }
