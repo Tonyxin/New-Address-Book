@@ -60,6 +60,7 @@ void CAddressBookDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialog::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_TREE_AddressBook, m_AddrbookTree);
+	DDX_Control(pDX, IDC_LIST_INFO, m_list_info);
 }
 
 BEGIN_MESSAGE_MAP(CAddressBookDlg, CDialog)
@@ -111,7 +112,7 @@ BOOL CAddressBookDlg::OnInitDialog()
 	InqTable_Users();				
 
 	//弹出登陆对话框
-	m_loginDlg.L_login = L;			//利用成员访问的方式将用户链表L存入给登陆对话框
+	m_loginDlg.L_login = L;						//利用成员访问的方式将用户链表L存入给登陆对话框
 	if (m_loginDlg.DoModal() != IDOK)	//当×掉登陆对话框时执行OnOk();		
 	{														
 		OnOK();										//结束所在的对话框
@@ -122,64 +123,18 @@ BOOL CAddressBookDlg::OnInitDialog()
 	//查询用户的分组信息
 	InqView_Group();
 
-	//查询每个分组中的成员信息
+	//查询每个分组中的成员
 	InqView_Member();
 
-	HICON hIcon[5];						//设置图标句柄数组
-	HTREEITEM hRoot;					//根节点句柄
-	HTREEITEM hPacket;					//表示任一分组句柄
-	HTREEITEM hMember;				//表示任一成员句柄
+	//树形控件初始化
+	InitTreeCtrl();
 
-	//加载图标，将他们的句柄保存到数组
-	hIcon[0] = theApp.LoadIcon(IDI_ICON_addrbook);
-	hIcon[1] = theApp.LoadIcon(IDI_ICON_family);
-	hIcon[2] = theApp.LoadIcon(IDI_ICON_classmate);
-	hIcon[3] = theApp.LoadIcon(IDI_ICON_friend);
-	hIcon[4] = theApp.LoadIcon(IDI_ICON_people);
+	//查询成员信息
+	InqTable_memberinfo();
 
-	//创建图像序列CImageList对象
-	m_ImageList.Create(32, 32, ILC_COLOR32, 5, 5);
-	//将图标添加到序列
-	for (int i = 0; i < 5; i++)		m_ImageList.Add(hIcon[i]);
-
-	//为树形控件设置图像序列
-	m_AddrbookTree.SetImageList(&m_ImageList, TVSIL_NORMAL);
-
-	//将分组成员信息显示到树形控件中
-	//插入根节点
-	hRoot = m_AddrbookTree.InsertItem(_T("通讯录"), 0, 0);
-
-	LinkList_Group L_Group_temp = L_Group;
-	//根节点下插入分组节点
-	while (L_Group_temp->next)
-	{
-		L_Group_temp = L_Group_temp->next;
-		CString group_name = L_Group_temp->data.group_name;
-		int group_id = L_Group_temp->data.group_id;
-		hPacket = m_AddrbookTree.InsertItem(group_name, group_id, group_id, hRoot, TVI_LAST);
-		//分组节点下插入根节点
-		LinkList_Member L_Member_temp = L_Group_temp->data.member_list;
-		while (L_Member_temp->next)
-		{
-			L_Member_temp = L_Member_temp->next;
-			CString member_name = L_Member_temp->data.member_name;
-			hMember = m_AddrbookTree.InsertItem(member_name, 4, 4, hPacket, TVI_LAST);
-		}
-	}
-	/*
-	//根结点下插入子节点“家人”
-	hPacket = m_AddrbookTree.InsertItem(_T("家人"), 1, 1, hRoot, TVI_LAST);
-	//在“家人”节点下插入子节点
-	hMember = m_AddrbookTree.InsertItem(_T("老王"), 4, 4, hPacket, TVI_LAST);
-	//根结点下插入子节点“同学”
-	hPacket = m_AddrbookTree.InsertItem(_T("同学"), 2, 2, hRoot, TVI_LAST);
-	//在“同学”节点下插入子节点
-	hMember = m_AddrbookTree.InsertItem(_T("老李"), 4, 4, hPacket, TVI_LAST);
-	//根结点下插入子节点“朋友”
-	hPacket = m_AddrbookTree.InsertItem(_T("朋友"), 3, 3, hRoot, TVI_LAST);
-	//在“朋友”节点下插入子节点
-	hMember = m_AddrbookTree.InsertItem(_T("老陈"), 4, 4, hPacket, TVI_LAST);
-	*/
+	//列表视图控件初始化
+	InitListCtrl();
+	
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 
@@ -242,12 +197,56 @@ void CAddressBookDlg::OnTvnSelchangedTreeAddressbook(NMHDR *pNMHDR, LRESULT *pRe
 
 	CString strText;				//存放树节点的标签文本字符串
 
-	//获取当前选中的句柄
+	ClearList();		//清空表
+
+	//获取根节点句柄及附加数据
+	HTREEITEM hItem_root = m_AddrbookTree.GetRootItem();
+	DWORD_PTR RootId = m_AddrbookTree.GetItemData(hItem_root);
+
+	//获取当前选中的句柄及附加数据
 	HTREEITEM hItem = m_AddrbookTree.GetSelectedItem();
+	DWORD_PTR hId = m_AddrbookTree.GetItemData(hItem);
+	
 	//获取选中节点的标签字符串
 	strText = m_AddrbookTree.GetItemText(hItem);
 	//将字符串显示到编辑框中
 	SetDlgItemText(IDC_EDIT_SELECTED, strText);
+	
+	if (hId != RootId)
+	{
+		//获取父节点句柄及附加数据
+		HTREEITEM hItem_parent = m_AddrbookTree.GetParentItem(hItem);
+		DWORD_PTR ParentId = m_AddrbookTree.GetItemData(hItem_parent);
+
+		//点击的节点为成员，显示成员信息
+		if ((ParentId != RootId) && (hId != RootId))
+		{
+			DWORD_PTR GroupId = ParentId;	//获取分组编号
+			DWORD_PTR MemberId = hId;			//获取成员编号
+			//在链表中寻找当前点中的成员节点信息，保存在member_information中
+			LinkList_Group L_Group_temp = L_Group;
+			while (L_Group_temp->next)
+			{
+				L_Group_temp = L_Group_temp->next;
+				if (L_Group_temp->data.group_id == GroupId)
+				{
+					LinkList_Member L_Member_temp = L_Group_temp->data.member_list;
+					while (L_Member_temp->next)
+					{
+						L_Member_temp = L_Member_temp->next;
+						if (L_Member_temp->data.member_id == MemberId)
+						{
+							member_information = L_Member_temp->data.member_info;
+							break;
+						}
+					}//while
+					break;
+				}//if
+			}//while
+			//此处添加节点信息的显示操作
+			FillList();		//将选中成员信息显示到表中
+		}//if
+	}
 }
 
 //连接数据源
@@ -260,6 +259,7 @@ void CAddressBookDlg::ConnectDataSource()
 	rs_user.m_pDatabase = &m_db;
 	rs_group.m_pDatabase = &m_db;
 	rs_member.m_pDatabase = &m_db;
+	rs_memberInfo.m_pDatabase = &m_db;
 	}
 
 	//显示连接是否成功
@@ -415,4 +415,166 @@ void CAddressBookDlg::OnEnChangeEditSelected()
 	// 同时将 ENM_CHANGE 标志“或”运算到掩码中。
 
 	// TODO:  在此添加控件通知处理程序代码
+}
+
+
+//树形控件初始化
+void CAddressBookDlg::InitTreeCtrl()
+{
+	HICON hIcon[5];						//设置图标句柄数组
+	HTREEITEM hRoot;					//根节点句柄
+	HTREEITEM hPacket;					//表示任一分组句柄
+	HTREEITEM hMember;				//表示任一成员句柄
+
+	//加载图标，将他们的句柄保存到数组
+	hIcon[0] = theApp.LoadIcon(IDI_ICON_addrbook);
+	hIcon[1] = theApp.LoadIcon(IDI_ICON_family);
+	hIcon[2] = theApp.LoadIcon(IDI_ICON_classmate);
+	hIcon[3] = theApp.LoadIcon(IDI_ICON_friend);
+	hIcon[4] = theApp.LoadIcon(IDI_ICON_people);
+
+	//创建图像序列CImageList对象
+	m_ImageList.Create(32, 32, ILC_COLOR32, 5, 5);
+	//将图标添加到序列
+	for (int i = 0; i < 5; i++)		m_ImageList.Add(hIcon[i]);
+
+	//为树形控件设置图像序列
+	m_AddrbookTree.SetImageList(&m_ImageList, TVSIL_NORMAL);
+
+	//将分组成员信息显示到树形控件中
+	//插入根节点
+	hRoot = m_AddrbookTree.InsertItem(_T("通讯录"), 0, 0);
+	m_AddrbookTree.SetItemData(hRoot, 0);			//设置跟节点的附加数据为0
+
+	LinkList_Group L_Group_temp = L_Group;
+	//根节点下插入分组节点
+	while (L_Group_temp->next)
+	{
+		L_Group_temp = L_Group_temp->next;
+		CString group_name = L_Group_temp->data.group_name;
+		int group_id = L_Group_temp->data.group_id;
+		hPacket = m_AddrbookTree.InsertItem(group_name, group_id, group_id, hRoot, TVI_LAST);
+		m_AddrbookTree.SetItemData(hPacket, group_id);		//分组节点的附加数据为分组编号
+		//分组节点下插入根节点
+		LinkList_Member L_Member_temp = L_Group_temp->data.member_list;
+		while (L_Member_temp->next)
+		{
+			L_Member_temp = L_Member_temp->next;
+			CString member_name = L_Member_temp->data.member_name;
+			hMember = m_AddrbookTree.InsertItem(member_name, 4, 4, hPacket, TVI_LAST);
+			m_AddrbookTree.SetItemData(hMember, L_Member_temp->data.member_id);
+																							//成员节点的附加数据为成员编号
+		}
+	}
+}
+
+
+//加载每个成员的信息
+void CAddressBookDlg::InqTable_memberinfo()
+{
+	
+	CString sql = _T("select m_id,m_name,m_sex,CONVERT(varchar(10),m_birthday,23) as m_birthday,\
+							m_email,m_phone,m_teleph,m_qq from membership");		//sql存放要执行的SQL语句
+	TRY
+	{
+		rs_memberInfo.Open(CRecordset::snapshot, sql);			//打开查询记录
+	}
+	LinkList_Group L_Group_temp = L_Group;
+	while (L_Group_temp->next)
+	{
+		L_Group_temp = L_Group_temp->next;
+		LinkList_Member L_Member_temp = L_Group_temp->data.member_list;
+		while (L_Member_temp->next)
+		{
+			L_Member_temp = L_Member_temp->next;
+			TRY
+			{
+				rs_memberInfo.MoveFirst();											//滚到第一条记录
+				while (!rs_memberInfo.IsEOF())										//未滚过最后一条记录，则执行
+				{
+					if (L_Member_temp->data.member_id == rs_memberInfo.m_m_id)
+					{
+						L_Member_temp->data.member_info.member_sex = rs_memberInfo.m_m_sex;
+						L_Member_temp->data.member_info.member_birthday = rs_memberInfo.m_m_birthday;
+						L_Member_temp->data.member_info.member_Email = rs_memberInfo.m_m_email;
+						L_Member_temp->data.member_info.member_phone = rs_memberInfo.m_m_phone;
+						L_Member_temp->data.member_info.member_teleph = rs_memberInfo.m_m_teleph;
+						L_Member_temp->data.member_info.member_QQ = rs_memberInfo.m_m_qq;
+						break;
+					}
+					else    rs_memberInfo.MoveNext();
+				}
+			}
+			CATCH(CDBException, ex)
+			{
+				AfxMessageBox(ex->m_strError);
+				AfxMessageBox(ex->m_strStateNativeOrigin);
+			}
+			AND_CATCH(CMemoryException, pex)
+			{
+				pex->ReportError();
+				AfxMessageBox(_T("memory exception"));
+			}
+			END_CATCH;
+		}
+	}
+	CATCH(CDBException, ex)
+	{
+		AfxMessageBox(ex->m_strError);
+		AfxMessageBox(ex->m_strStateNativeOrigin);
+	}
+	AND_CATCH(CMemoryException, pex)
+	{
+		pex->ReportError();
+		AfxMessageBox(_T("memory exception"));
+	}
+	END_CATCH;
+}
+
+
+//初始化列表视图控件
+void CAddressBookDlg::InitListCtrl()
+{
+	CRect rect;
+
+	//获取列表视图控件的位置和大小
+	m_list_info.GetClientRect(&rect);
+
+	//为列表视图控件添加全行选中和栅格风格
+	m_list_info.SetExtendedStyle(m_list_info.GetExtendedStyle() | LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
+
+	//为列表视图控件添加两列
+	m_list_info.InsertColumn(0, _T("成员信息"), LVCFMT_CENTER, rect.Width() / 2, 0);
+	m_list_info.InsertColumn(1, _T("数据"), LVCFMT_CENTER, rect.Width() / 2, 1);
+
+	//添加相应的行
+	m_list_info.InsertItem(0, _T("性别"));
+	m_list_info.InsertItem(1, _T("出生日期"));
+	m_list_info.InsertItem(2, _T("邮箱"));
+	m_list_info.InsertItem(3, _T("电话"));
+	m_list_info.InsertItem(4, _T("手机"));
+	m_list_info.InsertItem(5, _T("QQ"));
+}
+
+
+//清空列表
+void CAddressBookDlg::ClearList()
+{
+	m_list_info.SetItemText(0, 1, _T(""));
+	m_list_info.SetItemText(1, 1, _T(""));
+	m_list_info.SetItemText(2, 1, _T(""));
+	m_list_info.SetItemText(3, 1, _T(""));
+	m_list_info.SetItemText(4, 1, _T(""));
+	m_list_info.SetItemText(5, 1, _T(""));
+}
+
+//填充列表
+void CAddressBookDlg::FillList()
+{
+	m_list_info.SetItemText(0, 1, member_information.member_sex);
+	m_list_info.SetItemText(1, 1, member_information.member_birthday);
+	m_list_info.SetItemText(2, 1, member_information.member_Email);
+	m_list_info.SetItemText(3, 1, member_information.member_phone);
+	m_list_info.SetItemText(4, 1, member_information.member_teleph);
+	m_list_info.SetItemText(5, 1, member_information.member_QQ);
 }

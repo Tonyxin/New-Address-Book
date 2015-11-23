@@ -15,6 +15,7 @@
 #include "users.h"
 #include "view_group.h"
 #include "view_member.h"
+#include "memberinfo.h"
 
 #define WM_RECEV_USER		WM_USER+100			//自己定义的消息，用于返回当前用户编号
 
